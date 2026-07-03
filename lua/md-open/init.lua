@@ -32,13 +32,22 @@ local function open_image_under_cursor()
   local line = vim.api.nvim_get_current_line()
   local col = vim.api.nvim_win_get_cursor(0)[2] + 1
 
-  -- Markdown 图片匹配: ![alt](path) 或 ![](path)
+  -- 支持 ![任何文字](路径) 和 ![](路径)
   local pattern = "%!%[.-%]%((.-)%)"
+
   for path in line:gmatch(pattern) do
-    local start_pos = line:find(vim.pesc(path), 1, true)
-    if start_pos and col >= start_pos and col <= start_pos + #path then
-      open_image(path)
-      return
+    -- 查找这个路径在当前行的位置
+    local full_match = "](" .. path .. ")"
+    local start_pos = line:find(vim.pesc(full_match), 1, true)
+    
+    if start_pos then
+      start_pos = start_pos + 2  -- 跳过 "]("
+      local end_pos = start_pos + #path - 1
+
+      if col >= start_pos and col <= end_pos then
+        M.open_image(path)
+        return
+      end
     end
   end
 
